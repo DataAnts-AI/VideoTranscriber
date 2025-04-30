@@ -2,7 +2,7 @@
 # Core dependencies
 streamlit==1.26.0
 moviepy==1.0.3
-openai-whisper>=20230314
+openai-whisper==20231117
 transformers>=4.21.1
 torch>=1.7.0
 torchaudio>=0.7.0

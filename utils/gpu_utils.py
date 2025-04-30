@@ -68,6 +68,8 @@ def get_optimal_device():
 
 
 def set_memory_limits(memory_fraction=0.8):
+    global torch
+    import torch
     """
     Set memory limits for GPU usage.
     
@@ -81,9 +83,6 @@ def set_memory_limits(memory_fraction=0.8):
         return False
     
     try:
-        # Import only if CUDA is available
-        import torch.cuda
-        
         # Set memory fraction for each device
         for i in range(torch.cuda.device_count()):
             torch.cuda.set_per_process_memory_fraction(memory_fraction, i)
