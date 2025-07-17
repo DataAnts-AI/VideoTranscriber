@@ -319,10 +319,15 @@ def main():
             st.markdown(f"- {error}")
         return
 
-    # File selection
-    recordings = list(base_path.glob("*.mp4"))
+    # File selection - support multiple video formats
+    supported_extensions = ["*.mp4", "*.avi", "*.mov", "*.mkv"]
+    recordings = []
+    for extension in supported_extensions:
+        recordings.extend(base_path.glob(extension))
+    
     if not recordings:
         st.warning(f"📂 No recordings found in the folder: {base_folder}!")
+        st.info("💡 Supported formats: MP4, AVI, MOV, MKV")
         return
 
     selected_file = st.selectbox("Choose a recording", recordings)
