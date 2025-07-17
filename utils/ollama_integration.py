@@ -13,8 +13,8 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Default Ollama API endpoint
-OLLAMA_API_URL = "http://localhost:11434/api"
+# Default Ollama API endpoint - configurable via environment variable
+OLLAMA_API_URL = os.environ.get("OLLAMA_API_URL", "http://localhost:11434/api")
 
 
 def check_ollama_available():

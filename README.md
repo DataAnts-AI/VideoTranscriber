@@ -13,6 +13,32 @@ https://github.com/user-attachments/assets/990e63fc-232e-46a0-afdf-ca8836d46a13
 
 ## Installation
 
+### 🐳 Docker Installation (Recommended)
+
+**Benefits**: Isolated environment, no dependency conflicts, easy deployment
+
+```bash
+# 1. Clone repository
+git clone https://github.com/DataAnts-AI/VideoTranscriber.git
+cd VideoTranscriber
+
+# 2. Setup environment
+cp docker.env.example .env
+# Edit .env with your video directory paths
+
+# 3. Ensure Ollama is running on host
+ollama serve  # In separate terminal
+ollama pull llama3
+
+# 4. Start with Docker Compose
+docker-compose up -d
+
+# 5. Access application
+# Open browser to: http://localhost:8501
+```
+
+See [DOCKER.md](DOCKER.md) for complete Docker setup guide.
+
 ### Easy Installation (Recommended)
 
 #### Windows
