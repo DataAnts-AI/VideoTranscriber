@@ -17,8 +17,9 @@ https://github.com/user-attachments/assets/990e63fc-232e-46a0-afdf-ca8836d46a13
 
 **Benefits**: Isolated environment, no dependency conflicts, easy deployment
 
+#### Option A: Prebuilt Images (Fastest & Most Reliable)
 ```bash
-# 1. Clone repository
+# 1. Clone repository for config files
 git clone https://github.com/DataAnts-AI/VideoTranscriber.git
 cd VideoTranscriber
 
@@ -30,11 +31,17 @@ cp docker.env.example .env
 ollama serve  # In separate terminal
 ollama pull llama3
 
-# 4. Start with Docker Compose
-docker-compose up -d
+# 4. Start with prebuilt image
+docker-compose -f docker-compose.prebuilt.yml up -d
 
 # 5. Access application
 # Open browser to: http://localhost:8501
+```
+
+#### Option B: Build from Source (Development)
+```bash
+# Use the local build approach
+docker-compose up -d
 ```
 
 See [DOCKER.md](DOCKER.md) for complete Docker setup guide.

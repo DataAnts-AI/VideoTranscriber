@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  videotranscriber:
+    # Use prebuilt image from GitHub Container Registry
+    image: ghcr.io/dataants-ai/videotranscriber:latest
+    container_name: videotranscriber
+    ports:
+      - "8501:8501"
+    volumes:
+      # Mount your video files directory (change the left path to your actual videos folder)
+      - "${VIDEO_PATH:-./videos}:/app/data/videos"
+      # Mount output directory for transcripts and summaries
+      - "${OUTPUT_PATH:-./outputs}:/app/data/outputs" 
+      # Mount cache directory for model caching (optional, improves performance)
+      - "${CACHE_PATH:-./cache}:/app/data/cache"
+      # Mount a config directory if needed
+      - "${CONFIG_PATH:-./config}:/app/config"
+    environment:
+      # Ollama configuration for host access
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434/api}
+      # Optional: HuggingFace token for advanced features
+      - HF_TOKEN=${HF_TOKEN:-}
+      # GPU configuration
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}
+      # Cache settings
+      - TRANSFORMERS_CACHE=/app/data/cache/transformers
+      - WHISPER_CACHE=/app/data/cache/whisper
+    restart: unless-stopped
+    # Use bridge networking for Windows/Mac with host.docker.internal
+    networks:
+      - videotranscriber-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Alternative GPU-enabled service (uncomment to use)
+  # videotranscriber-gpu:
+  #   image: ghcr.io/dataants-ai/videotranscriber:latest-gpu
+  #   container_name: videotranscriber-gpu
+  #   ports:
+  #     - "8501:8501"
+  #   volumes:
+  #     - "${VIDEO_PATH:-./videos}:/app/data/videos"
+  #     - "${OUTPUT_PATH:-./outputs}:/app/data/outputs" 
+  #     - "${CACHE_PATH:-./cache}:/app/data/cache"
+  #     - "${CONFIG_PATH:-./config}:/app/config"
+  #   environment:
+  #     - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434/api}
+  #     - HF_TOKEN=${HF_TOKEN:-}
+  #     - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
+  #     - TRANSFORMERS_CACHE=/app/data/cache/transformers
+  #     - WHISPER_CACHE=/app/data/cache/whisper
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   restart: unless-stopped
+  #   networks:
+  #     - videotranscriber-network
+
+networks:
+  videotranscriber-network:
+    driver: bridge 
