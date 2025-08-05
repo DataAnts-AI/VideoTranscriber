@@ -11,7 +11,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
@@ -34,11 +33,15 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Convert repository name to lowercase
+      id: lowercase-repo
+      run: echo "repository=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: ${{ env.REGISTRY }}/${{ steps.lowercase-repo.outputs.repository }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -66,8 +69,8 @@ jobs:
         platforms: linux/amd64
         push: true
         tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-gpu
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-gpu
+          ${{ env.REGISTRY }}/${{ steps.lowercase-repo.outputs.repository }}:latest-gpu
+          ${{ env.REGISTRY }}/${{ steps.lowercase-repo.outputs.repository }}:${{ github.sha }}-gpu
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max 

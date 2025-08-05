@@ -1,7 +1,9 @@
 # Video Transcriber
 
 ## Project Overview
-The video Recording Transcriber is a Python application built with Streamlit that processes video recordings (particularly from OBS Studio) to generate transcripts and summaries using AI models. The application uses Whisper for transcription and Hugging Face Transformers for summarization.
+The Video Recording Transcriber is a Python application built with Streamlit that processes video and audio recordings to generate transcripts and summaries using AI models. The application uses Whisper for transcription and Hugging Face Transformers for summarization.
+
+**Supported Formats**: MP4, AVI, MOV, MKV (video) and M4A (audio)
 
 
 ![SuiteQL_query_UI-1-Thumbnail](https://github.com/user-attachments/assets/72aaf238-6615-4739-b77f-c4eb9ff96996)
@@ -84,8 +86,8 @@ streamlit run app.py
 ```
 
 ## Usage
-1. Set your base folder where OBS recordings are stored
-2. Select a recording from the dropdown
+1. Set your base folder where video/audio recordings are stored
+2. Select a recording from the dropdown (supports MP4, AVI, MOV, MKV, M4A)
 3. Choose transcription and summarization models
 4. Configure performance settings (GPU acceleration, caching)
 5. Select export formats and compression options

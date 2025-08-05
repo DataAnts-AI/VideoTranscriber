@@ -51,8 +51,9 @@ def transcribe_audio(audio_path: Path, model=WHISPER_MODEL, use_cache=True, cach
             logger.info(f"Using cached transcription for {audio_path}")
             return cached_data.get("segments", []), cached_data.get("transcript", "")
     
-    # Extract audio if the input is a video file
-    if audio_path.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:
+    # Extract audio if the input is a video file (M4A is already audio)
+    video_extensions = ['.mp4', '.avi', '.mov', '.mkv']
+    if audio_path.suffix.lower() in video_extensions:
         audio_path = extract_audio(audio_path)
     
     # Configure GPU if available and requested

@@ -17,13 +17,16 @@ docker-compose up -d --build
 
 ## Better Solution: Use Prebuilt Images
 
-Once available, use the prebuilt images instead:
+⚠️ **Note**: GitHub Actions had a naming issue that's now fixed. See [FIX-GITHUB-ACTIONS.md](FIX-GITHUB-ACTIONS.md) for details.
+
+Once prebuilt images are available, use them instead:
 
 ```bash
-# Stop current container
-docker-compose down
+# Check if images are ready
+docker pull ghcr.io/dataants-ai/videotranscriber:latest
 
-# Use prebuilt image (no build required)
+# If successful, stop current container and use prebuilt image
+docker-compose down
 docker-compose -f docker-compose.prebuilt.yml up -d
 ```
 
