@@ -43,11 +43,11 @@ def extract_keywords_tfidf(text, max_keywords=10, ngram_range=(1, 2)):
         # Preprocess text
         text = text.lower()
         
-        # Remove common stopwords
-        stopwords = {'a', 'an', 'the', 'and', 'or', 'but', 'if', 'because', 'as', 'what',
+        # Remove common stopwords - convert to list for scikit-learn compatibility
+        stopwords = ['a', 'an', 'the', 'and', 'or', 'but', 'if', 'because', 'as', 'what',
                     'when', 'where', 'how', 'who', 'which', 'this', 'that', 'these', 'those',
                     'then', 'just', 'so', 'than', 'such', 'both', 'through', 'about', 'for',
-                    'is', 'of', 'while', 'during', 'to', 'from', 'in', 'out', 'on', 'off', 'by'}
+                    'is', 'of', 'while', 'during', 'to', 'from', 'in', 'out', 'on', 'off', 'by']
         
         # Create sentences for better TF-IDF analysis
         sentences = re.split(r'[.!?]', text)
@@ -146,6 +146,10 @@ def find_keyword_timestamps(segments, keywords):
     keyword_timestamps = {}
     
     # Convert keywords to lowercase for case-insensitive matching
+    # Check if keywords list is not empty before accessing keywords[0]
+    if not keywords:
+        return keyword_timestamps
+        
     if isinstance(keywords[0], tuple):
         # If keywords is a list of (keyword, score) tuples
         keywords_lower = [k.lower() for k, _ in keywords]
@@ -163,6 +167,7 @@ def find_keyword_timestamps(segments, keywords):
         for i, keyword in enumerate(keywords_lower):
             if keyword in segment_text:
                 # Get the original case of the keyword
+                # Safe access to keywords[0] since we already checked keywords is not empty
                 original_keyword = keywords[i][0] if isinstance(keywords[0], tuple) else keywords[i]
                 
                 # Initialize the list if this is the first occurrence
