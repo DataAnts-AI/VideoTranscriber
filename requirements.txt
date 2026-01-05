@@ -8,9 +8,10 @@ humanize>=4.6.0
 
 # PyTorch ecosystem - updated for SpeechBrain 1.0 compatibility
 # torchaudio >= 2.1.0 is REQUIRED for diarization to work properly
-torch==2.1.0
-torchaudio==2.1.0
-torchvision==0.16.0
+# NOTE: For Docker GPU builds, these are installed separately from cu118 index
+torch>=2.1.0
+torchaudio>=2.1.0
+torchvision>=0.16.0
 
 # Transformers ecosystem - compatible versions
 transformers==4.35.0

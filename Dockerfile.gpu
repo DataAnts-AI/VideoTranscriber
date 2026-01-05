@@ -15,16 +15,17 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for better Docker layer caching
 COPY requirements.txt .
 
-# Install CPU versions from requirements.txt first
-RUN pip install --no-cache-dir -r requirements.txt
+# Upgrade pip first to avoid installation issues
+RUN pip install --upgrade pip
 
-# Install CUDA-optimized PyTorch (overwrites CPU versions)
-# Updated to torch 2.1.0+ for SpeechBrain 1.0 / pyannote diarization compatibility
-RUN pip install --force-reinstall \
-    torch==2.1.0+cu118 \
-    torchvision==0.16.0+cu118 \
-    torchaudio==2.1.0+cu118 \
-    --index-url https://download.pytorch.org/whl/cu118
+# Install CUDA-optimized PyTorch FIRST (before other requirements)
+# Using latest versions from cu118 index for SpeechBrain 1.0 / pyannote diarization compatibility
+# Not pinning versions - pip will resolve latest compatible versions from the index
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Install remaining dependencies from requirements.txt
+# Skip torch/torchvision/torchaudio since they're already installed
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
