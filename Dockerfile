@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Optional: Install CUDA-specific PyTorch if GPU support needed
 # Uncomment and modify for your CUDA version:
-# RUN pip install --force-reinstall torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# RUN pip install --force-reinstall torch==2.1.0+cu118 torchvision==0.16.0+cu118 torchaudio==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
 
 # Copy application code
 COPY . .

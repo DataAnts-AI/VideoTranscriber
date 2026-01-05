@@ -19,10 +19,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install CUDA-optimized PyTorch (overwrites CPU versions)
+# Updated to torch 2.1.0+ for SpeechBrain 1.0 / pyannote diarization compatibility
 RUN pip install --force-reinstall \
-    torch==2.0.1+cu118 \
-    torchvision==0.15.2+cu118 \
-    torchaudio==2.0.2+cu118 \
+    torch==2.1.0+cu118 \
+    torchvision==0.16.0+cu118 \
+    torchaudio==2.1.0+cu118 \
     --index-url https://download.pytorch.org/whl/cu118
 
 # Copy application code
