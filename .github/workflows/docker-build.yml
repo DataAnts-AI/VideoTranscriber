@@ -20,6 +20,24 @@ jobs:
       packages: write
 
     steps:
+    - name: Free up disk space
+      run: |
+        echo "Disk space before cleanup:"
+        df -h
+        # Remove unnecessary large packages
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /usr/share/swift
+        # Clean apt cache
+        sudo apt-get clean
+        # Clean Docker
+        docker system prune -af
+        echo "Disk space after cleanup:"
+        df -h
+
     - name: Checkout repository
       uses: actions/checkout@v4
 
@@ -50,16 +68,19 @@ jobs:
           type=semver,pattern={{major}}
           type=raw,value=latest,enable={{is_default_branch}}
 
-    - name: Build and push Docker image
+    - name: Build and push Docker image (CPU)
       uses: docker/build-push-action@v5
       with:
         context: .
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+    - name: Clean up Docker to free space for GPU build
+      run: docker system prune -af
 
     - name: Build and push GPU-enabled image
       uses: docker/build-push-action@v5
