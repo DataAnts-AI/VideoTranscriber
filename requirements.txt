@@ -1,32 +1,30 @@
 # OBS Recording Transcriber Dependencies
-# Core dependencies with pinned compatible versions
-streamlit==1.26.0
-moviepy==1.0.3
-openai-whisper==20231117
+# Core dependencies
+streamlit>=1.26.0
+moviepy>=1.0.3
+openai-whisper>=20231117
 requests>=2.28.0
 humanize>=4.6.0
 
-# PyTorch ecosystem - updated for SpeechBrain 1.0 compatibility
+# PyTorch ecosystem - DO NOT include here for Docker builds
+# These are installed separately with CUDA support in Dockerfile.gpu
+# For local installs: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 # torchaudio >= 2.1.0 is REQUIRED for diarization to work properly
-# NOTE: For Docker GPU builds, these are installed separately from cu118 index
-torch>=2.1.0
-torchaudio>=2.1.0
-torchvision>=0.16.0
 
-# Transformers ecosystem - compatible versions
-transformers==4.35.0
+# Transformers ecosystem
+transformers>=4.35.0
 tokenizers>=0.14.0
 
-# ML dependencies with compatible versions
-numpy==1.24.3
-scipy==1.10.1
-scikit-learn==1.3.0
+# ML dependencies - use flexible versions for compatibility
+numpy>=1.24.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
 
 # Audio processing and ML models
-# Pin speechbrain for stability with pyannote.audio
-speechbrain==1.0.0
-pyannote.audio==3.1.1
-pytorch-lightning==2.1.0
+# speechbrain 1.0+ required for pyannote compatibility
+speechbrain>=1.0.0
+pyannote.audio>=3.1.1
+pytorch-lightning>=2.0.0
 
 # Other dependencies
 iso639>=0.1.4
