@@ -15,12 +15,14 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for better Docker layer caching
 COPY requirements.txt .
 
-# Install Python dependencies with pinned versions
-RUN pip install --no-cache-dir -r requirements.txt
+# Upgrade pip and install build tools
+RUN pip install --upgrade pip setuptools wheel
 
-# Optional: Install CUDA-specific PyTorch if GPU support needed
-# Uncomment and modify for your CUDA version:
-# RUN pip install --force-reinstall torch==2.1.0+cu118 torchvision==0.16.0+cu118 torchaudio==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+# Install PyTorch CPU version first (for non-GPU builds)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .

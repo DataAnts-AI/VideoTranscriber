@@ -1,6 +1,7 @@
 # OBS Recording Transcriber Dependencies
 # Core dependencies
-streamlit>=1.26.0
+# streamlit>=1.30.0 required for protobuf>=5.0 compatibility
+streamlit>=1.30.0
 moviepy>=1.0.3
 openai-whisper>=20231117
 requests>=2.28.0
@@ -28,7 +29,8 @@ pytorch-lightning>=2.0.0
 
 # Other dependencies
 iso639>=0.1.4
-protobuf>=3.20.0,<5.0.0
+# protobuf>=5.0 required by opentelemetry (pyannote.audio dependency)
+protobuf>=5.0.0
 matplotlib>=3.5.0
 soundfile>=0.10.3
 ffmpeg-python>=0.2.0
