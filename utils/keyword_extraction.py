@@ -1,5 +1,5 @@
 """
-Keyword extraction utilities for the OBS Recording Transcriber.
+Keyword extraction utilities for the Video Transcriber.
 Provides functions to extract keywords and link them to timestamps.
 """
 
@@ -8,23 +8,28 @@ import re
 import torch
 import numpy as np
 from pathlib import Path
-from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassification
+from transformers import pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
+import streamlit as st
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Try to import GPU utilities, but don't fail if not available
 try:
     from utils.gpu_utils import get_optimal_device
     GPU_UTILS_AVAILABLE = True
 except ImportError:
     GPU_UTILS_AVAILABLE = False
 
-# Default models
 NER_MODEL = "dslim/bert-base-NER"
+
+
+@st.cache_resource
+def _load_ner_pipeline(model_name, device_int):
+    """Load and cache the NER pipeline."""
+    logger.info(f"Loading NER model: {model_name}")
+    return pipeline("ner", model=model_name, device=device_int, aggregation_strategy="simple")
 
 
 def extract_keywords_tfidf(text, max_keywords=10, ngram_range=(1, 2)):
@@ -107,8 +112,7 @@ def extract_named_entities(text, model=NER_MODEL, use_gpu=True):
         device_arg = -1
     
     try:
-        # Initialize the pipeline
-        ner_pipeline = pipeline("ner", model=model, device=device_arg, aggregation_strategy="simple")
+        ner_pipeline = _load_ner_pipeline(model, device_arg)
         
         # Split text into manageable chunks if too long
         max_length = 512

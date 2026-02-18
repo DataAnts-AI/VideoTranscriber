@@ -1,5 +1,5 @@
 """
-Speaker diarization utilities for the OBS Recording Transcriber.
+Speaker diarization utilities for the Video Transcriber.
 Provides functions to identify different speakers in audio recordings.
 """
 
@@ -11,20 +11,32 @@ import torch
 from pyannote.audio import Pipeline
 from pyannote.core import Segment
 import whisper
+import streamlit as st
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Try to import GPU utilities, but don't fail if not available
 try:
     from utils.gpu_utils import get_optimal_device
     GPU_UTILS_AVAILABLE = True
 except ImportError:
     GPU_UTILS_AVAILABLE = False
 
-# Default HuggingFace auth token environment variable
 HF_TOKEN_ENV = "HF_TOKEN"
+
+
+@st.cache_resource
+def _load_diarization_pipeline(hf_token, device_str):
+    """Load and cache the speaker diarization pipeline."""
+    logger.info(f"Loading diarization pipeline on {device_str}")
+    pipe = Pipeline.from_pretrained(
+        "pyannote/speaker-diarization-3.0",
+        use_auth_token=hf_token
+    )
+    device = torch.device(device_str)
+    if device.type == "cuda":
+        pipe = pipe.to(device)
+    return pipe
 
 
 def get_diarization_pipeline(use_gpu=True, hf_token=None):
@@ -38,7 +50,6 @@ def get_diarization_pipeline(use_gpu=True, hf_token=None):
     Returns:
         Pipeline or None: Diarization pipeline if successful, None otherwise
     """
-    # Check if token is provided or in environment
     if hf_token is None:
         hf_token = os.environ.get(HF_TOKEN_ENV)
         if hf_token is None:
@@ -46,23 +57,12 @@ def get_diarization_pipeline(use_gpu=True, hf_token=None):
             return None
     
     try:
-        # Configure device
         device = torch.device("cpu")
         if use_gpu and GPU_UTILS_AVAILABLE:
             device = get_optimal_device()
             logger.info(f"Using device: {device} for diarization")
         
-        # Initialize the pipeline
-        pipeline = Pipeline.from_pretrained(
-            "pyannote/speaker-diarization-3.0",
-            use_auth_token=hf_token
-        )
-        
-        # Move to appropriate device
-        if device.type == "cuda":
-            pipeline = pipeline.to(torch.device(device))
-        
-        return pipeline
+        return _load_diarization_pipeline(hf_token, str(device))
     except Exception as e:
         logger.error(f"Error initializing diarization pipeline: {e}")
         return None
@@ -198,9 +198,9 @@ def transcribe_with_diarization(audio_path, whisper_model="base", num_speakers=N
         device = get_optimal_device()
     
     try:
-        # Step 1: Transcribe audio with Whisper
+        from utils.transcription import _load_whisper_model
         logger.info(f"Transcribing audio with Whisper model: {whisper_model}")
-        model = whisper.load_model(whisper_model, device=device if device.type != "mps" else "cpu")
+        model = _load_whisper_model(whisper_model, str(device))
         result = model.transcribe(str(audio_path))
         transcript_segments = result["segments"]
         

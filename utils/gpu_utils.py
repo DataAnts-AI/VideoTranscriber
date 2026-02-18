@@ -1,12 +1,9 @@
 """
-GPU utilities for the OBS Recording Transcriber.
+GPU utilities for the Video Transcriber.
 Provides functions to detect and configure GPU acceleration.
 """
 
 import logging
-import os
-import platform
-import subprocess
 import torch
 
 # Configure logging
@@ -68,8 +65,6 @@ def get_optimal_device():
 
 
 def set_memory_limits(memory_fraction=0.8):
-    global torch
-    import torch
     """
     Set memory limits for GPU usage.
     
