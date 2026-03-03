@@ -19,7 +19,11 @@ def extract_audio(video_path: Path):
         audio = AudioFileClip(str(video_path))
         temp_dir = tempfile.mkdtemp(prefix="videotranscriber_")
         audio_path = Path(temp_dir) / f"{video_path.stem}_audio.wav"
-        audio.write_audiofile(str(audio_path), verbose=False, logger=None)
+        try:
+            audio.write_audiofile(str(audio_path), logger=None)
+        except TypeError:
+            # moviepy 1.x uses verbose parameter; moviepy 2.x removed it
+            audio.write_audiofile(str(audio_path), verbose=False, logger=None)
         audio.close()
         _temp_audio_files.append(str(audio_path))
         return audio_path

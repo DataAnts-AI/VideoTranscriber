@@ -22,13 +22,33 @@ logger = logging.getLogger(__name__)
 
 WHISPER_MODEL = "base"
 
+WHISPER_MODEL_SIZES = {
+    "tiny": 75,
+    "base": 140,
+    "small": 460,
+    "medium": 1500,
+    "large": 2900,
+    "large-v2": 2900,
+    "large-v3": 2900,
+}
+
 
 @st.cache_resource
 def _load_whisper_model(model_name, device_str):
     """Load and cache a Whisper model. Cached across reruns."""
     logger.info(f"Loading Whisper model: {model_name} on {device_str}")
     device = torch.device(device_str)
-    return whisper.load_model(model_name, device=device if device.type != "mps" else "cpu")
+    try:
+        return whisper.load_model(model_name, device=device if device.type != "mps" else "cpu")
+    except (MemoryError, RuntimeError) as e:
+        err_str = str(e).lower()
+        if "out of memory" in err_str or "cannot allocate" in err_str or isinstance(e, MemoryError):
+            size_mb = WHISPER_MODEL_SIZES.get(model_name, "unknown")
+            raise MemoryError(
+                f"Not enough memory to load Whisper '{model_name}' model (~{size_mb}MB). "
+                f"Try a smaller model (tiny/base/small) or enable GPU acceleration."
+            ) from e
+        raise
 
 
 def transcribe_audio(audio_path: Path, model=WHISPER_MODEL, use_cache=True, cache_max_age=None, 

@@ -113,9 +113,16 @@ def render_sidebar():
             index=["tiny", "base", "small", "medium", "large"].index(
                 st.session_state.transcription_model
             ),
-            help="Larger models are more accurate but slower.",
+            help="Larger models are more accurate but slower. "
+                 "Memory: tiny ~75MB, base ~140MB, small ~460MB, medium ~1.5GB, large ~2.9GB",
             key="sb_whisper_model",
         )
+        if st.session_state.transcription_model in ("large", "large-v2", "large-v3") and not st.session_state.get("use_gpu", False):
+            st.warning(
+                "The **large** Whisper model requires ~2.9GB of memory. "
+                "Without GPU, this may crash the application. Consider using "
+                "**medium** or smaller, or enable GPU acceleration."
+            )
 
         summarization_options = (
             ["Hugging Face (Online)", "Ollama (Local)"]
@@ -407,109 +414,119 @@ def process_recording(file_path, sidebar_opts):
     results = {}
     start_time = time.time()
 
-    with st.status("Processing recording...", expanded=True) as status:
+    try:
+        with st.status("Processing recording...", expanded=True) as status:
 
-        # Step 1: Transcription
-        st.write(f"Transcribing with Whisper ({st.session_state.transcription_model} model)...")
-        t0 = time.time()
-
-        if st.session_state.use_diarization and DIARIZATION_AVAILABLE and sidebar_opts["hf_token"]:
-            num_spk = int(sidebar_opts["num_speakers"]) if sidebar_opts["num_speakers"] > 0 else None
-            segments, transcript = transcribe_with_diarization(
-                file_path,
-                whisper_model=st.session_state.transcription_model,
-                num_speakers=num_spk,
-                use_gpu=st.session_state.use_gpu,
-                hf_token=sidebar_opts["hf_token"],
-            )
-            results["diarized"] = True
-        elif st.session_state.use_translation and TRANSLATION_AVAILABLE:
-            st.write("Transcribing and translating...")
-            orig_seg, trans_seg, orig_text, trans_text = transcribe_and_translate(
-                file_path,
-                whisper_model=st.session_state.transcription_model,
-                target_lang=sidebar_opts["target_lang"],
-                use_gpu=st.session_state.use_gpu,
-            )
-            segments = trans_seg
-            transcript = trans_text
-            results["original_text"] = orig_text
-            results["original_segments"] = orig_seg
-            results["translated"] = True
-        else:
-            segments, transcript = transcribe_audio(
-                file_path,
-                model=st.session_state.transcription_model,
-                use_cache=st.session_state.use_cache,
-                use_gpu=st.session_state.use_gpu,
-                memory_fraction=st.session_state.memory_fraction,
-            )
-
-        transcription_time = time.time() - t0
-        st.write(f"Transcription complete ({transcription_time:.1f}s)")
-
-        if not transcript:
-            status.update(label="Processing failed", state="error")
-            return None
-
-        results["segments"] = segments
-        results["transcript"] = transcript
-
-        # Step 2: Keyword extraction
-        if st.session_state.use_keywords and KEYWORD_EXTRACTION_AVAILABLE:
-            st.write("Extracting keywords...")
+            # Step 1: Transcription
+            st.write(f"Transcribing with Whisper ({st.session_state.transcription_model} model)...")
             t0 = time.time()
-            kw_ts, ent_ts = extract_keywords_from_transcript(
-                transcript, segments,
-                max_keywords=sidebar_opts["max_keywords"],
-                use_gpu=st.session_state.use_gpu,
+
+            if st.session_state.use_diarization and DIARIZATION_AVAILABLE and sidebar_opts["hf_token"]:
+                num_spk = int(sidebar_opts["num_speakers"]) if sidebar_opts["num_speakers"] > 0 else None
+                segments, transcript = transcribe_with_diarization(
+                    file_path,
+                    whisper_model=st.session_state.transcription_model,
+                    num_speakers=num_spk,
+                    use_gpu=st.session_state.use_gpu,
+                    hf_token=sidebar_opts["hf_token"],
+                )
+                results["diarized"] = True
+            elif st.session_state.use_translation and TRANSLATION_AVAILABLE:
+                st.write("Transcribing and translating...")
+                orig_seg, trans_seg, orig_text, trans_text = transcribe_and_translate(
+                    file_path,
+                    whisper_model=st.session_state.transcription_model,
+                    target_lang=sidebar_opts["target_lang"],
+                    use_gpu=st.session_state.use_gpu,
+                )
+                segments = trans_seg
+                transcript = trans_text
+                results["original_text"] = orig_text
+                results["original_segments"] = orig_seg
+                results["translated"] = True
+            else:
+                segments, transcript = transcribe_audio(
+                    file_path,
+                    model=st.session_state.transcription_model,
+                    use_cache=st.session_state.use_cache,
+                    use_gpu=st.session_state.use_gpu,
+                    memory_fraction=st.session_state.memory_fraction,
+                )
+
+            transcription_time = time.time() - t0
+            st.write(f"Transcription complete ({transcription_time:.1f}s)")
+
+            if not transcript:
+                status.update(label="Processing failed", state="error")
+                return None
+
+            results["segments"] = segments
+            results["transcript"] = transcript
+
+            # Step 2: Keyword extraction
+            if st.session_state.use_keywords and KEYWORD_EXTRACTION_AVAILABLE:
+                st.write("Extracting keywords...")
+                t0 = time.time()
+                kw_ts, ent_ts = extract_keywords_from_transcript(
+                    transcript, segments,
+                    max_keywords=sidebar_opts["max_keywords"],
+                    use_gpu=st.session_state.use_gpu,
+                )
+                results["keyword_timestamps"] = kw_ts
+                results["entity_timestamps"] = ent_ts
+                results["keyword_index"] = generate_keyword_index(kw_ts, ent_ts)
+                results["interactive_transcript"] = generate_interactive_transcript(segments, kw_ts, ent_ts)
+                st.write(f"Keywords extracted ({time.time() - t0:.1f}s)")
+
+            # Step 3: Summarization
+            st.write("Generating summary...")
+            t0 = time.time()
+
+            use_ollama = (
+                OLLAMA_AVAILABLE
+                and st.session_state.summarization_method == "Ollama (Local)"
+                and sidebar_opts["ollama_model"]
             )
-            results["keyword_timestamps"] = kw_ts
-            results["entity_timestamps"] = ent_ts
-            results["keyword_index"] = generate_keyword_index(kw_ts, ent_ts)
-            results["interactive_transcript"] = generate_interactive_transcript(segments, kw_ts, ent_ts)
-            st.write(f"Keywords extracted ({time.time() - t0:.1f}s)")
 
-        # Step 3: Summarization
-        st.write("Generating summary...")
-        t0 = time.time()
-
-        use_ollama = (
-            OLLAMA_AVAILABLE
-            and st.session_state.summarization_method == "Ollama (Local)"
-            and sidebar_opts["ollama_model"]
-        )
-
-        if use_ollama:
-            summary = chunk_and_summarize(transcript, model=sidebar_opts["ollama_model"])
-            if not summary:
-                st.write("Ollama failed, falling back to Hugging Face...")
+            if use_ollama:
+                summary = chunk_and_summarize(transcript, model=sidebar_opts["ollama_model"])
+                if not summary:
+                    st.write("Ollama failed, falling back to Hugging Face...")
+                    summary = summarize_text(
+                        transcript,
+                        use_gpu=st.session_state.use_gpu,
+                        memory_fraction=st.session_state.memory_fraction,
+                    )
+                results["ollama_streaming"] = True
+            else:
                 summary = summarize_text(
                     transcript,
                     use_gpu=st.session_state.use_gpu,
                     memory_fraction=st.session_state.memory_fraction,
                 )
-            results["ollama_streaming"] = True
-        else:
-            summary = summarize_text(
-                transcript,
-                use_gpu=st.session_state.use_gpu,
-                memory_fraction=st.session_state.memory_fraction,
-            )
 
-        results["summary"] = summary
-        st.write(f"Summary generated ({time.time() - t0:.1f}s)")
+            results["summary"] = summary
+            st.write(f"Summary generated ({time.time() - t0:.1f}s)")
 
-        # Cleanup temp audio files
-        cleanup_temp_audio()
+            # Cleanup temp audio files
+            cleanup_temp_audio()
 
-        total_time = time.time() - start_time
-        results["processing_time"] = total_time
-        results["word_count"] = len(transcript.split())
+            total_time = time.time() - start_time
+            results["processing_time"] = total_time
+            results["word_count"] = len(transcript.split())
 
-        status.update(label=f"Complete in {total_time:.1f}s", state="complete")
+            status.update(label=f"Complete in {total_time:.1f}s", state="complete")
 
-    return results
+        return results
+
+    except MemoryError as e:
+        st.error(str(e))
+        logger.error(f"Out of memory: {e}")
+        return None
+    except Exception as e:
+        st.error(f"Processing error: {e}")
+        logger.error(f"Processing error: {e}", exc_info=True)
+        return None
 
 
 def render_results(results, sidebar_opts):
